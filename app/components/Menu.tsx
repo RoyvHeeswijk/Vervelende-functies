@@ -21,7 +21,22 @@ const generateRandomText = () => {
     return texts[Math.floor(Math.random() * texts.length)];
 };
 
-const menuItems = Array.from({ length: 50 }, (_, i) => `Optie ${i + 1}`);
+// Vaste lijst met menu items
+const menuItems = [
+    'Big Mac', 'Quarter Pounder', 'McChicken', 'McDouble',
+    'Filet-O-Fish', 'Cheeseburger', 'Hamburger', 'McRib',
+    'Grand Chicken', 'Big Tasty', 'McWrap', 'Chicken McNuggets',
+    'McKroket', 'McFlurry', 'McSundae', 'Apple Pie',
+    'Frietjes', 'Frietjes Groot', 'Frietjes Medium', 'Frietjes Klein',
+    'Chickenburger', 'Chicken Legend', 'Chicken Selects', 'Chicken Wings',
+    'Salade Caesar', 'Salade Bacon', 'Salade Kip', 'Salade Vis',
+    'Milkshake Vanille', 'Milkshake Chocolade', 'Milkshake Aardbei', 'Milkshake Caramel',
+    'Cola', 'Fanta', 'Sprite', 'Ice Tea',
+    'McMelt', 'McToast', 'McToast Bacon', 'McToast Ham',
+    'McMuffin Ei', 'McMuffin Bacon', 'McMuffin Sausage', 'McMuffin Ham',
+    'McKroket Burger', 'McKroket Deluxe', 'McKroket Bacon', 'McKroket Cheese',
+    'McFlurry Oreo', 'McFlurry M&M', 'McFlurry Smarties', 'McFlurry KitKat'
+];
 
 export default function Menu() {
     const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +48,7 @@ export default function Menu() {
     const [itemColors, setItemColors] = useState<{ [key: number]: string }>({});
     const [itemTexts, setItemTexts] = useState<{ [key: number]: string }>({});
     const [isShaking, setIsShaking] = useState(false);
+    const [currentMenuItems, setCurrentMenuItems] = useState(menuItems);
     const menuRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout>();
     const shakeIntervalRef = useRef<NodeJS.Timeout>();
@@ -40,15 +56,22 @@ export default function Menu() {
     const [buttonColor, setButtonColor] = useState('bg-blue-500');
     const [buttonText, setButtonText] = useState('Open Menu');
     const [isButtonHovered, setIsButtonHovered] = useState(false);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (!isClient) return;
+
         // Genereer willekeurige posities en rotaties
         const positions: { [key: number]: { x: number, y: number, rotate: number } } = {};
         const sizes: { [key: number]: { width: string, height: string } } = {};
         const colors: { [key: number]: string } = {};
         const texts: { [key: number]: string } = {};
 
-        menuItems.forEach((_, index) => {
+        currentMenuItems.forEach((_, index) => {
             positions[index] = {
                 x: Math.random() * 20 - 10,
                 y: Math.random() * 20 - 10,
@@ -100,13 +123,19 @@ export default function Menu() {
             setButtonText(texts[Math.floor(Math.random() * texts.length)]);
         }, 3000);
 
+        // Shuffle menu items every 5 seconds
+        const shuffleInterval = setInterval(() => {
+            setCurrentMenuItems(prev => [...prev].sort(() => Math.random() - 0.5));
+        }, 5000);
+
         return () => {
             clearTimeout(timer);
             clearInterval(shakeIntervalRef.current);
             clearInterval(colorInterval);
             clearInterval(textInterval);
+            clearInterval(shuffleInterval);
         };
-    }, []);
+    }, [isClient]);
 
     const handleMouseEnter = () => {
         if (timeoutRef.current) {
@@ -140,9 +169,7 @@ export default function Menu() {
     const handleDynamicButtonClick = (action: string) => {
         switch (action) {
             case 'shuffle':
-                // Schud de menu items en verander hun posities
-                const shuffled = [...menuItems].sort(() => Math.random() - 0.5);
-                menuItems.splice(0, menuItems.length, ...shuffled);
+                setCurrentMenuItems(prev => [...prev].sort(() => Math.random() - 0.5));
                 // Genereer nieuwe willekeurige posities
                 const newPositions = { ...randomPositions };
                 Object.keys(newPositions).forEach(key => {
@@ -220,13 +247,12 @@ export default function Menu() {
             </div>
 
             <div
-                className={`absolute top-full left-0 mt-2 w-64 bg-white shadow-lg rounded transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-                    }`}
+                className={`absolute top-full left-0 mt-2 w-64 bg-white shadow-lg rounded transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
                 <div className="max-h-96 overflow-y-auto">
-                    {menuItems.map((item, index) => (
+                    {currentMenuItems.map((item, index) => (
                         <div
                             key={index}
                             className={`px-4 cursor-pointer transition-all duration-300 ${hoveredItem === index
@@ -241,7 +267,7 @@ export default function Menu() {
                             onMouseLeave={() => setHoveredItem(null)}
                             onClick={() => handleOptionClick(item, index)}
                         >
-                            {itemTexts[index] || item}
+                            {item}
                         </div>
                     ))}
                 </div>
